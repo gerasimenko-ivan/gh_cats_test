@@ -1,0 +1,7 @@
+{
+  "proxy-host" : "",
+  "proxy-port": "",
+  "test-rail-url": "https://some.testrail.ru",
+  "test-rail-username": "XXXXXXXXXXXXX",
+  "test-rail-password": "XXXXXXXXXXXXX"
+}

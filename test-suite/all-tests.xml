@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite name="Тесты базовой функциональности НСИ">
+    <test name="Тесты базовой функциональности НСИ">
+        <classes>
+            <class name="ot.webtest.tests.DashboardTest">
+                <methods>
+                    <include name="dashboardCreateDecentralizedTaskTest"/>
+                    <include name="dashboardCreateWorkOrderTaskTest"/>
+                </methods>
+            </class>
+            <class name="ot.webtest.tests.TaskJournalTest">
+                <methods>
+                    <include name="taskJournalCreateDecentralizedTaskTest"/>
+                    <include name="taskJournalCreateWorkOrderTaskTest"/>
+                </methods>
+            </class>
+            <class name="ot.webtest.tests.NsiTest">
+                <methods>
+                    <include name="createCardFuelCalculationOperationTest"/>
+                    <include name="createCardFuelConsumptionNormTest"/>
+                </methods>
+            </class>
+            <class name="ot.webtest.tests.TestBase">
+                <methods>
+                    <include name="testsInfo"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+</suite>

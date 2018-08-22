@@ -1,0 +1,6 @@
+
+ACCOUNTS:
+
+
+RUN (Maven) COMMANDS:
+2-nd stand - all tests:     clean test -Dtestdatafile=test2-env.json -Dsuite=test-suite/all-tests.xml site

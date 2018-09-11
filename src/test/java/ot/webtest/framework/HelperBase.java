@@ -8,8 +8,10 @@ import io.qameta.allure.Step;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.testng.Assert;
+import ot.webtest.dataobject.DropDownResponse;
 import ot.webtest.dataobject.ListNode;
 import ot.webtest.dataobject.Special;
+import ot.webtest.framework.helpers.RandomDataGenerator;
 import ot.webtest.framework.helpers.RobotHelper;
 
 import java.util.ArrayList;
@@ -21,6 +23,7 @@ import static com.codeborne.selenide.WebDriverRunner.getWebDriver;
 import static ot.webtest.framework.BrowserManager.EXCEPTION_IGNORE_TIMEOUT;
 import static ot.webtest.framework.BrowserManager.GLOBAL_TIMEOUT;
 import static ot.webtest.framework.helpers.AllureHelper.*;
+import static ot.webtest.framework.helpers.AssertHelper.checkFalse;
 import static ot.webtest.framework.helpers.AssertHelper.checkTrue;
 import static ot.webtest.framework.helpers.TimerHelper.sleepMillis;
 import static ot.webtest.framework.helpers.TimerHelper.sleepMillisSilent;
@@ -148,34 +151,13 @@ public class HelperBase {
 
     @Step("В выпадающем списке '{fieldName}' выбираем опцию '{value}'")
     public Special<String> dropDownSelect(String fieldName, Special<String> value, By openDropDownButtonLocator, By dropDownListAnyItemLocator) {
-        if (value == null || value.getType() == Special.Type.NULL) {
-            logSkipped("Нет данных для ввода в поле '" + fieldName + "'");
-            return null;
-        } else {
-            if (value.getType() == Special.Type.RANDOM) {
-                openDropDown(
-                        fieldName,
-                        openDropDownButtonLocator,
-                        dropDownListAnyItemLocator);
-                List<String> options =
-                        getItemsOfOpenedDropDownList(
-                                fieldName,
-                                dropDownListAnyItemLocator);
-                String randomOption = options.get(new Random().nextInt(options.size()));
-                click("Выбираем опцию '" + randomOption + "' (случайным образом)",
-                        By.xpath(dropDownListAnyItemLocator.toString().replace("By.xpath: ", "") + "[text()='" + randomOption + "']"));
-                return new Special<>(randomOption);
-            } else {
-                openDropDown(
-                        fieldName,
-                        openDropDownButtonLocator,
-                        dropDownListAnyItemLocator);
-                String optionToSelect = value.toString();
-                click("Выбираем опцию '" + optionToSelect + "'",
-                        By.xpath(dropDownListAnyItemLocator.toString().replace("By.xpath: ", "") + "[text()='" + optionToSelect + "']"));
-                return value;
-            }
-        }
+        DropDownResponse dropDownResponse = dropDownSelect(
+                fieldName,
+                value,
+                openDropDownButtonLocator,
+                dropDownListAnyItemLocator,
+                null);
+        return dropDownResponse == null ? null : dropDownResponse.selectedValue;
     }
 
     /** Special version of dropDownSelect if there are too many items in drop-down list (ATTENTION TO INDEXED ARGUMENT!!!)
@@ -186,8 +168,45 @@ public class HelperBase {
      */
     @Step("В выпадающем списке '{fieldName}' выбираем опцию '{value}'")
     public Special<String> dropDownSelect(String fieldName, Special<String> value, By openDropDownButtonLocator, String dropDownListAnyItemXPathWithINDEX) {
+        DropDownResponse dropDownResponse = dropDownSelect(
+                fieldName,
+                value,
+                openDropDownButtonLocator,
+                null,
+                dropDownListAnyItemXPathWithINDEX);
+        return dropDownResponse == null ? null : dropDownResponse.selectedValue;
+    }
+
+    /** MUST use only one of arguments "dropDownListAnyItemLocator" || "dropDownListAnyItemXPathWithINDEX" (leave one as NULL)
+     */
+    @Step("В выпадающем списке '{fieldName}' выбираем опцию '{value}'")
+    public DropDownResponse dropDownSelectGeneral (String fieldName, Special<String> value, By openDropDownButtonLocator, By dropDownListAnyItemLocator, String dropDownListAnyItemXPathWithINDEX) {
+        return
+                dropDownSelect(
+                        fieldName,
+                        value,
+                        openDropDownButtonLocator,
+                        dropDownListAnyItemLocator,
+                        dropDownListAnyItemXPathWithINDEX);
+    }
+
+    /** general method to handle DropDowns:
+     * MUST use only one of arguments "dropDownListAnyItemLocator" || "dropDownListAnyItemXPathWithINDEX" (leave one as NULL)
+     * @param fieldName
+     * @param value
+     * @param openDropDownButtonLocator
+     * @param dropDownListAnyItemLocator
+     * @param dropDownListAnyItemXPathWithINDEX
+     * @return
+     */
+    private DropDownResponse dropDownSelect(String fieldName, Special<String> value, By openDropDownButtonLocator, By dropDownListAnyItemLocator, String dropDownListAnyItemXPathWithINDEX) {
+        DropDownResponse dropDownResponse = new DropDownResponse();
         final String INDEX = "[INDEX]";
-        String dropDownListAnyItemXPath = dropDownListAnyItemXPathWithINDEX.replace(INDEX, "");
+        String dropDownListAnyItemXPath = "";
+        if (dropDownListAnyItemXPathWithINDEX != null) {
+            dropDownListAnyItemXPath = dropDownListAnyItemXPathWithINDEX.replace(INDEX, "");
+            dropDownListAnyItemLocator = By.xpath(dropDownListAnyItemXPath);
+        }
         if (value == null || value.getType() == Special.Type.NULL) {
             logSkipped("Нет данных для ввода в поле '" + fieldName + "'");
             return null;
@@ -196,28 +215,92 @@ public class HelperBase {
                 openDropDown(
                         fieldName,
                         openDropDownButtonLocator,
-                        By.xpath(dropDownListAnyItemXPath));
-                Integer optionsCount =
-                        getNumberOfItemsOfOpenedDropDownList(
-                                fieldName,
-                                By.xpath(dropDownListAnyItemXPath));
-                Integer randomOptionIndex = new Random().nextInt(optionsCount) + 1;
-                By optionToSelectLocator = By.xpath(dropDownListAnyItemXPathWithINDEX.replace(INDEX, "[" + randomOptionIndex + "]"));// "//div[@class='Select-menu']/div[" + randomOptionIndex + "]/div/div");
-                String optionToSelectText = getText(optionToSelectLocator, "Текст опции #" + randomOptionIndex);
-                sleepMillis(100);
-                click("Выбираем опцию #" + randomOptionIndex + " (случайным образом)", optionToSelectLocator);
-                return new Special<>(optionToSelectText);
+                        dropDownListAnyItemLocator);
+                if (dropDownListAnyItemXPathWithINDEX != null) {
+                    Integer optionsCount =
+                            getNumberOfItemsOfOpenedDropDownList(
+                                    fieldName,
+                                    dropDownListAnyItemLocator);
+                    Integer randomOptionIndex = new Random().nextInt(optionsCount) + 1;
+
+                    List<String> tenRandomOptions = new ArrayList<>();
+                    RandomDataGenerator rnd = new RandomDataGenerator();
+                    if (optionsCount > 10 ) {
+                        List<Integer> tenRandomIndexes = rnd.getUniqueIndexes(10, optionsCount - 1);
+                        for (int i : tenRandomIndexes) {
+                            i = i + 1;
+                            tenRandomOptions.add(
+                                    getText(By.xpath(dropDownListAnyItemXPathWithINDEX.replace(INDEX, "[" + i + "]")), "Текст опции #" + i));
+                        }
+                    } else {
+                        for (int i = 0; i < optionsCount; i++) {
+                            int index = i + 1;
+                            tenRandomOptions.add(
+                                    getText(By.xpath(dropDownListAnyItemXPathWithINDEX.replace(INDEX, "[" + index + "]")), "Текст опции #" + index));
+                        }
+                    }
+
+                    By optionToSelectLocator = By.xpath(dropDownListAnyItemXPathWithINDEX.replace(INDEX, "[" + randomOptionIndex + "]"));
+                    String optionToSelectText = getText(optionToSelectLocator, "Текст опции #" + randomOptionIndex);
+                    sleepMillis(100);
+                    logPassed("Будет выбрана опция #" + randomOptionIndex + " со значением '" + optionToSelectText + "'");
+                    click("Выбираем опцию #" + randomOptionIndex + " (случайным образом)", optionToSelectLocator);
+                    dropDownResponse
+                            .withSelectedValue(new Special<>(optionToSelectText))
+                            .withAvailableOptions(tenRandomOptions);
+                } else {
+                    List<String> options =
+                            getItemsOfOpenedDropDownList(
+                                    fieldName,
+                                    dropDownListAnyItemLocator);
+                    String randomOption = options.get(new Random().nextInt(options.size()));
+                    clickDropDownOption(dropDownListAnyItemLocator.toString().replace("By.xpath: ", ""), randomOption);
+                    dropDownResponse
+                            .withSelectedValue(new Special<>(randomOption))
+                            .withAvailableOptions(options);
+                }
+                return dropDownResponse;
             } else {
                 openDropDown(
                         fieldName,
                         openDropDownButtonLocator,
-                        By.xpath(dropDownListAnyItemXPath));
+                        dropDownListAnyItemLocator);
                 String optionToSelect = value.toString();
-                click("Выбираем опцию '" + optionToSelect + "'",
-                        By.xpath(dropDownListAnyItemXPath + "[text()='" + optionToSelect + "']"));
-                return value;
+                if (dropDownListAnyItemXPathWithINDEX != null) {
+                    clickDropDownOption(dropDownListAnyItemXPath, optionToSelect);
+                } else {
+                    clickDropDownOption(dropDownListAnyItemLocator.toString().replace("By.xpath: ", ""), optionToSelect);
+                }
+                return dropDownResponse.withSelectedValue(value);
             }
         }
+    }
+
+    @Step("Выбираем опцию '{optionText}' в выпадающем списке.")
+    private void clickDropDownOption(String xpathToOption, String optionText) {
+        String optionXpath = xpathToOption + "[text()='" + optionText + "']";
+        try {
+            Configuration.timeout = 5000;
+            click("Клик по опции '" + optionText + "'", By.xpath(optionXpath));
+            return;
+        } catch (Throwable e) {
+            logBroken("Опция '" + optionXpath + "' не найдена (за 5с.).");
+        } finally {
+            Configuration.timeout = GLOBAL_TIMEOUT;
+        }
+
+        String optionXpathWithWhitespaceAtTheEnd = xpathToOption + "[text()='" + optionText + " ']";
+        try {
+            Configuration.timeout = 1000;
+            click("Клик по опции '" + optionText + "' (добавляем пробел в конце текста опции)", By.xpath(optionXpathWithWhitespaceAtTheEnd));
+            return;
+        } catch (Throwable e) {
+            logBroken("Опция '" + optionXpathWithWhitespaceAtTheEnd + "' не найдена (за 1с.).");
+        } finally {
+            Configuration.timeout = GLOBAL_TIMEOUT;
+        }
+
+        click("Клик по опции'" + optionText + "'", By.xpath(xpathToOption + "[text()='" + optionText + "']"));
     }
 
     // MENU
@@ -242,6 +325,13 @@ public class HelperBase {
         $(locator).hover();
     }
 
+    // SCROLLING
+
+    @Step("Прокрутка к элементу  '{locator}'")
+    public void scrollIntoView(By locator) {
+        $(locator).scrollIntoView(true);
+    }
+
     // CLICKING
 
     @Step("{actionDescription}")
@@ -250,7 +340,8 @@ public class HelperBase {
     }
     @Step("Клик по <<{locator}>>")
     public void click(By locator) {
-        $(locator).scrollIntoView(true);
+        scrollIntoView(locator);
+        logPassed("Теперь клик...");
         $(locator).click();
     }
     @Step("Клик по элементу '{elementName}'")
@@ -342,6 +433,18 @@ public class HelperBase {
     /*******************************************************************************************************************
      * Проверки (с падениями)
      *******************************************************************************************************************/
+
+    // ENABLED / DISABLED
+
+    @Step("Проверка: элемент '{elementName}' должен быть активен (ENABLED).")
+    public void checkEnabled(String elementName, By locator) {
+        checkTrue(isEnabled(locator), "ENABLED", "DISABLED");
+    }
+
+    @Step("Проверка: элемент '{elementName}' НЕ должен быть активен (DISABLED).")
+    public void checkDisabled(String elementName, By locator) {
+        checkFalse(isEnabled(locator), "DISABLED", "ENABLED");
+    }
 
     // DISPLAYED
 
@@ -438,8 +541,8 @@ public class HelperBase {
             // hope this method won't break anything, but I need it for handling very similar drop-down elements
             isDisplayed = isAtLeastOneDisplayedWithTimeout(locator, 0);
             if (!isDisplayed) {
-                logPassed("Элемент не отображается. Повторная проверка через 500мс.");
-                sleepMillisSilent(500);
+                logScreenshot("Элемент не отображается. Повторная проверка через 100мс.");
+                sleepMillisSilent(100);
             } else {
                 break;
             }
@@ -483,7 +586,7 @@ public class HelperBase {
         return isDisplayed;
     }
 
-    // ENABLED
+    // ENABLED + testing git
 
     @Step("{actionDescription}")
     public boolean isEnabled(String actionDescription, By locator) {
@@ -671,22 +774,35 @@ public class HelperBase {
      * @param elementName
      * @return - видимый веб-элемент по заданному локатору
      */
-    protected SelenideElement findElementHavingInvisibleDuplicates(By locator, String elementName) {
+    protected SelenideElement findElementHavingInvisibleDuplicates(By locator, String elementName, long timeout) {
         SelenideElement singleVisibleElement = null;
-        List<SelenideElement> elements = $$(locator);
+        List<SelenideElement> elements = null;
+        long start = System.currentTimeMillis();
         int visibleElementsCount = 0;
-        for (SelenideElement element : elements) {
-            if (element.isDisplayed()) {
-                singleVisibleElement = element;
-                visibleElementsCount++;
+        do {
+            elements = $$(locator);
+            visibleElementsCount = 0;
+            for (SelenideElement element : elements) {
+                if (element.isDisplayed()) {
+                    singleVisibleElement = element;
+                    visibleElementsCount++;
+                }
             }
-        }
+        } while (System.currentTimeMillis() - start < timeout && visibleElementsCount != 1);
         if (visibleElementsCount == 0) {
             Assert.fail("Не найден ни один элемент '" + elementName + "'");
         } else if (visibleElementsCount > 1) {
             Assert.fail("Найдено более одного видимого элемента '" + elementName + "'");
         }
         return singleVisibleElement;
+    }
+
+    protected SelenideElement findElementHavingInvisibleDuplicates(By locator, String elementName) {
+        return findElementHavingInvisibleDuplicates(locator, elementName, 0);
+    }
+
+    protected SelenideElement findElementHavingInvisibleDuplicates(By locator, long timeout) {
+        return findElementHavingInvisibleDuplicates(locator, locator.toString(), timeout);
     }
 
     protected SelenideElement findElementHavingInvisibleDuplicates(By locator) {

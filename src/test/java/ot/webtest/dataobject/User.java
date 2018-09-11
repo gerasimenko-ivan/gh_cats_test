@@ -5,6 +5,7 @@ public class User {
     public String password;
     public String popupLogin;
     public String popupPassword;
+    public String surnameNM;
 
     public User withLogin(String login) {
         this.login = login;
@@ -23,6 +24,11 @@ public class User {
 
     public User withPopupPassword(String popupPassword) {
         this.popupPassword = popupPassword;
+        return this;
+    }
+
+    public User withSurnameNM (String surnameNM) {
+        this.surnameNM = surnameNM;
         return this;
     }
 }

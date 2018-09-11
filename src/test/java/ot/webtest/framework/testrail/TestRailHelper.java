@@ -164,6 +164,7 @@ public class TestRailHelper {
             // add current step to ordered list without 'substeps count'
             orderedListOfSteps.add(stepValueMatcher.replaceAll(""));
         }
+
         return orderedListOfSteps;
     }
 

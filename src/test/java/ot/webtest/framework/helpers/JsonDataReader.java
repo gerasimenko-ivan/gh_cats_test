@@ -6,28 +6,35 @@ import org.testng.Assert;
 import java.io.*;
 
 import static ot.webtest.framework.helpers.AllureHelper.logException;
+import static ot.webtest.framework.helpers.AllureHelper.logPassed;
 
 public class JsonDataReader {
     private JSONObject testData;
 
     public JSONObject getJsonObjectFromFile(String filePath) {
         File testDataFile = new File(filePath);
-        FileReader testDataFileReader = null;
+        FileInputStream testDataFileInputStream = null;
         try {
-            testDataFileReader = new FileReader(testDataFile);
+            testDataFileInputStream = new FileInputStream(testDataFile);
         } catch (FileNotFoundException e) {
-            Assert.fail("Не найден файл с входными данными для теста. Путь к файлу: '" + filePath + "'");
-            logException(e);
             e.printStackTrace();
+            throw new IllegalArgumentException("Не найден файл с входными данными для теста. Путь к файлу: '" + filePath + "'");
         }
-        BufferedReader bufferedReader = new BufferedReader(testDataFileReader);
+        InputStreamReader inputStreamReader = null;
+        try {
+            inputStreamReader = new InputStreamReader(testDataFileInputStream, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            throw new IllegalArgumentException("UnsupportedEncodingException - UTF-8 seems not to be supported :(");
+        }
+        BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
         StringBuffer stringBuffer = new StringBuffer();
         String line;
         try {
             while ((line = bufferedReader.readLine()) != null) {
                 stringBuffer.append(line);
             }
-            testDataFileReader.close();
+            testDataFileInputStream.close();
         } catch (IOException e) {
             logException(e);
             e.printStackTrace();

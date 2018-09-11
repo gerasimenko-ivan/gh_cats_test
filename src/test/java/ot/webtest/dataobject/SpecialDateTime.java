@@ -4,6 +4,7 @@ import ot.webtest.framework.helpers.DateHelper;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -61,6 +62,12 @@ public class SpecialDateTime {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.LL.yyyy");
             return date.format(formatter);
         }
+    }
+
+    public long getMillisecondsSinceEpoch() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(date.getYear(), date.getMonthValue() - 1, date.getDayOfMonth(), hour, minute);
+        return calendar.getTimeInMillis();
     }
 
     @Override

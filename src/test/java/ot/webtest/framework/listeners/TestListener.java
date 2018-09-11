@@ -26,7 +26,7 @@ public class TestListener extends TestBase implements ITestListener {
     @Override
     public void onTestFailure(ITestResult iTestResult) {
         testStatus = TestRailStatus.FAILED;
-        logFailScreenshot("ON TEST FAILURE");
+        logFailScreenshot("ON TEST FAILURE >> " + iTestResult.getThrowable().getMessage().replace("\n", " - "));
         parseResultsAndSendToTestRail(iTestResult, TestRailStatus.FAILED);
     }
 

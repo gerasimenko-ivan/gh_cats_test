@@ -1,6 +1,5 @@
 package ot.webtest.framework.helpers;
 
-import java.text.DecimalFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -20,7 +19,9 @@ public class StringHelper {
         return localDate.format(formatter);
     }
 
-    /** Возвращает ФИО вида "Торокулов М.М." из ФИО вида "Торокулов Максатбек Мисирович". Любое дополнительныое имя за отчеством опускается!
+    /** Возвращает ФИО вида "Торокулов М.М." из ФИО вида "Торокулов Максатбек Мисирович".
+     * Любое дополнительныое имя за отчеством опускается!
+     * Если Имя или отчество начинается со строчной буквы, регистр не меняется.
      * @param fio
      * @return
      */
@@ -42,6 +43,20 @@ public class StringHelper {
             }
         }
         return Surname_XX;
+    }
+
+    public static String fioToSingleString(String surname, String name, String middleName) {
+        if (!isNotEmptyString(surname)) {
+            throw new IllegalArgumentException("Фамилия не может быть пустой или NULL.");
+        }
+        String fioSingleLine = surname;
+        if (isNotEmptyString(name)) {
+            fioSingleLine += " " + name;
+        }
+        if (isNotEmptyString(middleName)) {
+            fioSingleLine += " " + middleName;
+        }
+        return fioSingleLine;
     }
 
     /** Получаем значения true, если строка не NULL и не пустая

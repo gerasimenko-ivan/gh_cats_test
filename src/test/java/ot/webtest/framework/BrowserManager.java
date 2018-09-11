@@ -10,10 +10,14 @@ import ot.webtest.framework.kketshelpers.LoginHelper;
 import ot.webtest.framework.kketshelpers.MainMenuHelper;
 import ot.webtest.framework.kketshelpers.dashboard.DashboardHelper;
 import ot.webtest.framework.kketshelpers.dashboard.TaskCreationHelper;
+import ot.webtest.framework.kketshelpers.nsi.EmployeeRegistryHelper;
 import ot.webtest.framework.kketshelpers.nsi.FuelCalculationOperationHelper;
 import ot.webtest.framework.kketshelpers.nsi.FuelConsumptionNormHelper;
+import ot.webtest.framework.kketshelpers.nsi.TechnologicalOperationsRegistryHelper;
 import ot.webtest.framework.kketshelpers.taskjournal.TaskJournalHelper;
 import ot.webtest.framework.kketshelpers.taskjournal.WorkOrderJournalHelper;
+import ot.webtest.framework.kketshelpers.waybill.WaybillCreationHelper;
+import ot.webtest.framework.kketshelpers.waybill.WaybillJournalHelper;
 import ot.webtest.tests.TestBase;
 
 import java.io.BufferedReader;
@@ -41,10 +45,14 @@ public class BrowserManager {
     private DashboardHelper dashboardHelper;
 
     private TaskCreationHelper taskCreationHelper;
+    private WaybillCreationHelper waybillCreationHelper;
 
+    private TechnologicalOperationsRegistryHelper technologicalOperationsRegistryHelper;
+    private WaybillJournalHelper waybillJournalHelper;
     private TaskJournalHelper taskJournalHelper;
     private WorkOrderJournalHelper workOrderJournalHelper;
 
+    private EmployeeRegistryHelper employeeRegistryHelper;
     private FuelCalculationOperationHelper fuelCalculationOperationHelper;
     private FuelConsumptionNormHelper fuelConsumptionNormHelper;
 
@@ -62,10 +70,14 @@ public class BrowserManager {
         dashboardHelper = new DashboardHelper();
 
         taskCreationHelper = new TaskCreationHelper();
+        waybillCreationHelper = new WaybillCreationHelper();
 
+        technologicalOperationsRegistryHelper = new TechnologicalOperationsRegistryHelper();
+        waybillJournalHelper = new WaybillJournalHelper();
         taskJournalHelper = new TaskJournalHelper();
         workOrderJournalHelper = new WorkOrderJournalHelper();
 
+        employeeRegistryHelper = new EmployeeRegistryHelper();
         fuelCalculationOperationHelper = new FuelCalculationOperationHelper();
         fuelConsumptionNormHelper = new FuelConsumptionNormHelper();
 
@@ -78,7 +90,7 @@ public class BrowserManager {
 
         loginHelper().login(user.login, user.password);
         loginHelper().checkSuccessfulLogin();
-        loader().waitLoaderDisappear();
+        loader().waitLoaderDisappear(60000);
 
         String etsVersion = getEtsVersion();
         TestBase.setTestedSoftwareVersion("V." + etsVersion);
@@ -189,6 +201,18 @@ public class BrowserManager {
         return taskCreationHelper;
     }
 
+    public WaybillCreationHelper waybillCreation() {
+        return waybillCreationHelper;
+    }
+
+    /*****************************************************************************************************************
+     * Путевые листы (Журнал путевых листов)
+     ****************************************************************************************************************/
+
+    public WaybillJournalHelper waybillJournal() {
+        return waybillJournalHelper;
+    }
+
     /*****************************************************************************************************************
      * МЕНЮ: ЗАДАНИЯ
      ****************************************************************************************************************/
@@ -204,6 +228,14 @@ public class BrowserManager {
     /*****************************************************************************************************************
      * МЕНЮ: НСИ
      ****************************************************************************************************************/
+    public TechnologicalOperationsRegistryHelper techOperRegistry() {
+        return technologicalOperationsRegistryHelper;
+    }
+
+    public EmployeeRegistryHelper employeeRegistry() {
+        return employeeRegistryHelper;
+    }
+
     public FuelCalculationOperationHelper fuelCalculationOperation() {
         return fuelCalculationOperationHelper;
     }

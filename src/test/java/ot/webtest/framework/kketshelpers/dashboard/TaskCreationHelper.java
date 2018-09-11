@@ -15,9 +15,7 @@ import ot.webtest.framework.kketshelpers.dataobjects.WorkOrderTask;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ot.webtest.framework.helpers.AllureHelper.logPassed;
-import static ot.webtest.framework.helpers.AllureHelper.logScreenshot;
-import static ot.webtest.framework.helpers.AllureHelper.logSkipped;
+import static ot.webtest.framework.helpers.AllureHelper.*;
 import static ot.webtest.framework.helpers.TimerHelper.sleepMillis;
 
 public class TaskCreationHelper extends HelperBase {
@@ -29,13 +27,15 @@ public class TaskCreationHelper extends HelperBase {
     @Step("Создаём децентрализованное задание {decentralizedTask}")
     public DecentralizedTask setAndSaveDecentralizedTask(DecentralizedTask decentralizedTask) {
 
-        selectTechnologicalOperation(decentralizedTask.technologicalOperation);
-        selectElement(decentralizedTask.element);
-        selectSubdivision(decentralizedTask.subdivision);
-
+        // setting of dates moved here because when Task is created from Waybill form creation Element field is block if date is not set correctly
         setDateStart(decentralizedTask.dateStart);
         setDurationHours(decentralizedTask.durationHours);
         setDateEnd(decentralizedTask.dateEnd);
+
+        logDelimeter();
+        selectTechnologicalOperation(decentralizedTask.technologicalOperation);
+        selectElement(decentralizedTask.element);
+        selectSubdivision(decentralizedTask.subdivision);
 
         if (decentralizedTask.isTaskForColumn != null) {
             setCheckBox("Создать задания на колонну", By.xpath("//div[label[text()='Создать задания на колонну']]/input"), decentralizedTask.isTaskForColumn);
@@ -48,6 +48,7 @@ public class TaskCreationHelper extends HelperBase {
             vehicleCount = 3;
             logPassed("Т.к. создаётся задание на колонну, то будет выбрано 3 ТС...");
         } else {
+            logPassed("Т.к. создаётся задание НЕ на колонну, то будет выбрано только одно ТС...");
             vehicleCount = 1;
         }
         for (int i = 0; i < vehicleCount; i++) {
@@ -70,8 +71,8 @@ public class TaskCreationHelper extends HelperBase {
             dropDownSelect(
                     "Форма ПЛ (путевого листа)",
                     decentralizedTask.waybillStatus == null ? null : new Special<>(decentralizedTask.waybillStatus.toString()),
-                    By.xpath("//div[@id='assign-to-waybill']//span[contains(@class, 'Select-arrow-zone')]"),
-                    By.xpath("//div[@id='assign-to-waybill']//div[@class='Select-menu']//span"));
+                    By.xpath("//div[@id='mission-assign-to-waybill-value']//span[contains(@class, 'Select-arrow-zone')]"),
+                    By.xpath("//div[@id='mission-assign-to-waybill-value']//div[@class='Select-menu']//span"));
         }
 
         String passesCount = decentralizedTask.passesCount == null ? null : String.valueOf(decentralizedTask.passesCount);
@@ -81,7 +82,7 @@ public class TaskCreationHelper extends HelperBase {
         setComment(decentralizedTask.comment);
 
         logScreenshot("Скриншот перед сохранением формы.");
-        click("Клик по кнопке 'Сохранить'", By.xpath("//button[text()='Сохранить']"));
+        click("Клик по кнопке 'Сохранить'", By.xpath("//div[div//span[text()='Создание задания']]//button[text()='Сохранить']"));
         return decentralizedTask;
 
         /*
@@ -223,12 +224,15 @@ public class TaskCreationHelper extends HelperBase {
     @Step("Создаём наряд-задание {workOrderTask}")
     public WorkOrderTask setAndSaveWorkOrderTask(WorkOrderTask workOrderTask) {
 
+        // moved date setting to the beginning to avoid problems with loaders after lists selection
+        setDateStart(workOrderTask.dateStart);
+        setDateEnd(workOrderTask.dateEnd);
+        logDelimeter();
+
         selectTechnologicalOperation(workOrderTask.technologicalOperation);
         selectElement(workOrderTask.element);
         selectSubdivision(workOrderTask.subdivision);
-
-        setDateStart(workOrderTask.dateStart);
-        setDateEnd(workOrderTask.dateEnd);
+        logDelimeter();
 
         Special<String> brigadier = selectBrigadier(workOrderTask.brigadier);
         workOrderTask.withBrigadier(brigadier);
@@ -265,7 +269,7 @@ public class TaskCreationHelper extends HelperBase {
                     "Бригада",
                     brigade.get(i),
                     By.xpath("//div[label[text()='Бригада']]//span[contains(@class, 'Select-arrow-zone')]"),
-                    "//div[label[text()='Бригада']]//div[@class='Select-menu']/div[@class='Select-option'][INDEX]/div/span");
+                    "//div[label[text()='Бригада']]//div[@class='Select-menu']/div[contains(@class, 'Select-option')][INDEX]/div/span");
             brigadeSelected.add(worker);
         }
         return brigadeSelected;
@@ -276,6 +280,6 @@ public class TaskCreationHelper extends HelperBase {
                 "Бригадир",
                 brigadier,
                 By.xpath("//div[label[text()='Бригадир']]//span[contains(@class, 'Select-arrow-zone')]"),
-                "//div[label[text()='Бригадир']]//div[@class='Select-menu']/div[@class='Select-option'][INDEX]/div/span");
+                "//div[label[text()='Бригадир']]//div[@class='Select-menu']/div[contains(@class, 'Select-option')][INDEX]/div/span");
     }
 }

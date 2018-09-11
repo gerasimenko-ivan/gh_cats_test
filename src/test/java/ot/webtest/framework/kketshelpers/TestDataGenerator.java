@@ -4,16 +4,13 @@ import io.qameta.allure.Step;
 import ot.webtest.dataobject.Special;
 import ot.webtest.dataobject.SpecialDateTime;
 import ot.webtest.framework.helpers.RandomDataGenerator;
-import ot.webtest.framework.kketshelpers.dataobjects.DecentralizedTask;
-import ot.webtest.framework.kketshelpers.dataobjects.TaskSource;
-import ot.webtest.framework.kketshelpers.dataobjects.WaybillStatus;
-import ot.webtest.framework.kketshelpers.dataobjects.WorkOrderTask;
+import ot.webtest.framework.kketshelpers.dataobjects.*;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ot.webtest.framework.helpers.AllureHelper.logFailed;
+import static ot.webtest.framework.helpers.AllureHelper.logBroken;
 import static ot.webtest.framework.helpers.AllureHelper.logPassed;
 
 public class TestDataGenerator {
@@ -25,7 +22,7 @@ public class TestDataGenerator {
         RandomDataGenerator rnd = new RandomDataGenerator();
         // Время выполнения задания для ОДХ должно составлять не более 5 часов
         int hourStart = rnd.nextInt(24);
-        int minuteStart = (rnd.nextInt(hourStart == 23 ? 59 : 60) * 5) % 60;
+        int minuteStart = rnd.nextInt(hourStart == 23 ? 11 : 12) * 5;
         int minutesWithDeltaLessOrEqualTo300 = (hourStart*60 + minuteStart) + 5 + (rnd.nextInt(295/5)*5); // plus delta from 5 to 300 minutes
         int hourEnd, minuteEnd;
         if (minutesWithDeltaLessOrEqualTo300 >= (23*60 + 55)) {
@@ -42,7 +39,6 @@ public class TestDataGenerator {
                 new SpecialDateTime(dateStartRandom.date)
                         .withHour(hourEnd).withMinute(minuteEnd);
 
-        logFailed("Приходится прописывать жёсткий, а не случайный Маршрут, т.к. есть маршрут с дублями пробелов '1-2   ПМ   ПРАВИЛЬНЫЙ , Проезжая часть', а он валит Селенид");
         DecentralizedTask decentralizedTask =
                 (DecentralizedTask) new DecentralizedTask()
                         //.withVehicle(Special.RANDOM())                                // HARDCODED
@@ -50,8 +46,7 @@ public class TestDataGenerator {
                         .withIsTaskForColumn(false)         // for column - another test-case
                         //.withTechnologicalOperation(Special.RANDOM())                 // HARDCODED
                         //.withElement(Special.RANDOM())                                // HARDCODED
-                        //.withRouteName(Special.RANDOM())
-                        .withRouteName(new Special<>("МАРШРУТ №1 ОДХ Мойка проезжей части, Проезжая часть"))
+                        .withRouteName(Special.RANDOM())
                         .withDateStart(dateStartRandom)
                         .withDateEnd(dateEndRandom)
                         .withTaskSource(TaskSource.getRandomWithoutFACKSOGRAM())
@@ -62,7 +57,7 @@ public class TestDataGenerator {
         decentralizedTask
                 .withPassesCount(rnd.nextInt(10) + 1)
                 .withWaybillStatus(WaybillStatus.ADD_TO_SKETCH_OF_WAIBILL)
-                .withVehicle(new Special<>("В097ВВ777 [мкду-1/КАМАЗ-65115/ДКМ (ПМ+ПЩ+ЖР)]"))
+                .withVehicle(new Special<>("В097ВВ777 [мкду-1/КАМАЗ-65115/ДКМ (ПМ+ЖР)]"))
                 .withTechnologicalOperation(new Special<>("Сплошная мойка"))
                 .withElement(new Special<>("Проезжая часть"))
                 .withSubdivision(new Special<>("ДЭУ.ОДХ"));
@@ -76,9 +71,10 @@ public class TestDataGenerator {
     public static WorkOrderTask getWorkOrderTaskWithSomeHardcodedFieldValuesForTaskCreation() {
         RandomDataGenerator rnd = new RandomDataGenerator();
         int hourStart = rnd.nextInt(24);
-        int minuteStart = (rnd.nextInt(hourStart == 23 ? 59 : 60) * 5) % 60;
+        // 10.09.2018: change to moro simply formula of minute generation (let's check where it will fail. Or not))
+        int minuteStart = rnd.nextInt(12) * 5; //(rnd.nextInt(hourStart == 23 ? 58 : 59) * 5) % 60;
         int hourEnd = rnd.nextInt(24);
-        int minuteEnd = (rnd.nextInt(hourStart == 23 ? 59 : 60) * 5) % 60;
+        int minuteEnd = rnd.nextInt(12) * 5; //(rnd.nextInt(hourStart == 23 ? 58 : 59) * 5) % 60;
         SpecialDateTime dateStartRandom =
                 rnd.getSpecialDateTime(LocalDate.now().plusDays(-28), LocalDate.now().plusDays(1000))
                         .withHour(hourStart).withMinute(minuteStart);
@@ -102,5 +98,96 @@ public class TestDataGenerator {
                 .withTaskSource(TaskSource.getRandomWithoutFACKSOGRAM())
                 .withComment(rnd.getCyrillicWords(5, 15, rnd.nextInt(5)+1))
                 .withRouteName(Special.RANDOM());
+    }
+
+    @Step("Данные для теста: успешное создание карточки сотрудника (водителя/машиниста).")
+    public static Employee getEmployeeForCreationOfDriverOrMechanistCard() {
+        RandomDataGenerator rnd = new RandomDataGenerator();
+        List<Special<String>> secondaryVehicles = new ArrayList<>();
+        for (int i = 0; i < 1 + rnd.nextInt(5); i++) {
+            secondaryVehicles.add(Special.RANDOM());  // 1-5 vehicles
+        }
+        Employee employee =
+                new Employee()
+                        .withSurname(rnd.getCyrillicWordWithLeadingUpperCase(2 + rnd.nextInt(19)))
+                        .withName(rnd.getCyrillicWordWithLeadingUpperCase(2 + rnd.nextInt(19)))
+                        .withPersonnelNumber((1 + rnd.nextInt(9)) + rnd.getNumbers(14))     // can start with zeroes!!! can have length 15+ ???? BUG BUG BUG!!!
+                        .withPosition(rnd.getBooleanNoNull() ? new Special<>("водитель") : new Special<>("машинист"))
+                        .withMainVehicle(Special.RANDOM())
+                        .withSecondaryVehicles(secondaryVehicles);
+        int licenseSet = rnd.nextInt(3);
+        if (licenseSet == 0 || licenseSet == 2) {
+            employee
+                    .withSpecialLicenseId(rnd.getCyrillicAndNumber(5 + rnd.nextInt(10)) + " " + rnd.getCyrillicAndNumber(5 + rnd.nextInt(10)))
+                    .withSpecialLicenseExpireDate(rnd.getDate(LocalDate.now().plusDays(1), LocalDate.now().plusDays(4000)));
+        }
+        if (licenseSet == 1 || licenseSet == 2) {
+            employee
+                    .withDriverLicenseId(rnd.getDriverLicenseNumberRUS())
+                    .withDriverLicenseExpireDate(rnd.getDate(LocalDate.now().plusDays(1), LocalDate.now().plusDays(4000)));
+        }
+        return employee;
+    }
+
+    @Step("Данные для теста: успешное создание карточки сотрудника (НЕ водителя/машиниста).")
+    public static Employee getEmployeeNoVehicles() {
+        RandomDataGenerator rnd = new RandomDataGenerator();
+        Employee employee =
+                new Employee()
+                        .withSurname(rnd.getCyrillicWordWithLeadingUpperCase(2 + rnd.nextInt(19)))
+                        .withName(rnd.getCyrillicWordWithLeadingUpperCase(2 + rnd.nextInt(19)))
+                        .withPersonnelNumber((1 + rnd.nextInt(9)) + rnd.getNumbers(14))     // can start with zeroes!!! BUG BUG BUG!!!
+                        .withPosition(Special.RANDOM());
+        int licenseSet = rnd.nextInt(3);
+        if (licenseSet == 0 || licenseSet == 2) {
+            employee
+                    .withSpecialLicenseId(rnd.getCyrillicAndNumber(5 + rnd.nextInt(10)) + " " + rnd.getCyrillicAndNumber(5 + rnd.nextInt(10)))
+                    .withSpecialLicenseExpireDate(rnd.getDate(LocalDate.now().plusDays(1), LocalDate.now().plusDays(4000)));
+        }
+        if (licenseSet == 1 || licenseSet == 2) {
+            employee
+                    .withDriverLicenseId(rnd.getDriverLicenseNumberRUS())
+                    .withDriverLicenseExpireDate(rnd.getDate(LocalDate.now().plusDays(1), LocalDate.now().plusDays(4000)));
+        }
+        return employee;
+    }
+
+    @Step("Данные для теста: Создание Путевого листа.")
+    public static Waybill getWaybill() {
+        Waybill waybill;
+        RandomDataGenerator rnd = new RandomDataGenerator();
+        logBroken("dateLeavePlanned: нужно получать от даты возврата ТС (Статус ПЛ - Активный, но возможны варианты)");
+        SpecialDateTime dateLeavePlanned =
+                new SpecialDateTime(LocalDate.now().plusDays(1000 + rnd.nextInt(1000)))
+                        .withHour(rnd.nextInt(24))
+                        .withMinute(rnd.nextInt(11) * 5);   // MAX = 50, as decentralizedTask.dateStart + 5 min!!!
+        SpecialDateTime dateEnd =
+                new SpecialDateTime(dateLeavePlanned.date.plusDays(1))
+                        .withHour(rnd.nextInt(24))
+                        .withMinute(rnd.nextInt(12) * 5);
+        waybill =
+                new Waybill()
+                        .withDateLeavePlanned(dateLeavePlanned)
+                        .withDateReturnPlanned(dateEnd)
+                        // hardcoded vehicle... it should have GLONASS & Task...
+                        .withVehicle(new Special<>("1488НВ77 [МПУ-1М/МПУ-1М/ДКМ (ПУ+ПЩ)]"))   //  "1485НВ77 [МПУ-1М/МПУ-1М/ДКМ (ПМ+ПЩ)]"
+                        .withDriver(Special.RANDOM());
+
+        SpecialDateTime dateStart =
+                new SpecialDateTime(dateLeavePlanned.date)
+                        .withHour(dateLeavePlanned.hour)
+                        .withMinute(dateLeavePlanned.minute + 5);
+        //dateReturnPlanned.date = dateReturnPlanned.date.plusDays(-1);
+        DecentralizedTask decentralizedTask =
+                (DecentralizedTask) new DecentralizedTask()
+                        .withDateStart(dateStart)
+                        .withDateEnd(dateEnd)
+                        .withRouteName(Special.RANDOM());
+        decentralizedTask
+                .withTechnologicalOperation(new Special<>("Сплошное подметание"))
+                .withElement(new Special<>("Проезжая часть"));
+
+        waybill.withDecentralizedTaskToCreate(decentralizedTask);
+        return waybill;
     }
 }

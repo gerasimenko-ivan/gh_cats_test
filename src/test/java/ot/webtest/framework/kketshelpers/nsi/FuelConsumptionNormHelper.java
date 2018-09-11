@@ -68,6 +68,8 @@ public class FuelConsumptionNormHelper extends HelperBase {
                 By.xpath("//div[label[text()='Подразделение']]//div[contains(@class,'Select-menu')]//span"));
         fuelConsumptionNorm.withSubdivision(subdevision);
 
+        sleepMillis(300, "Ожидание, т.к. кнопка Сохранить сразу часто не реагирует на клик (хотя она активна)");
+
         logScreenshot("Скриншот перед сохранением формы.");
         clickSave();
         return fuelConsumptionNorm;
@@ -124,6 +126,8 @@ public class FuelConsumptionNormHelper extends HelperBase {
 
         logScreenshot("Форма фильтра перед применением.");
         click("Клик по кнопке 'Применить'", By.xpath("//button[@id='apply-filter']"));
+        sleepMillis(200);
+        logScreenshot("Скриншот по применению фильтра");
         click("Закрываем фильтры", openCloseFilterButtonLocator);
     }
 
@@ -133,15 +137,33 @@ public class FuelConsumptionNormHelper extends HelperBase {
             logSkipped("Нет данных для ввода в поле 'Операция (название)' в фильтре.");
             return;
         }
-        click("Клик по полю 'Операция' для активации ввода (установки курсора)", By.xpath("//div[label[text()='Операция']]//div[contains(@class,'Select-placeholder')]"));
-        sleepMillis(200);
-        RobotHelper robotHelper = new RobotHelper();
-        try {
-            robotHelper.typeString(operationName.toString());
+        int trialsCount = 0;
+        do {
+            logDelimeter();
+            logPassed(" Попытка#" + trialsCount);
+
+            click("Клик по полю 'Операция' для активации ввода (установки курсора)", By.xpath("//div[label[text()='Операция']]//div[contains(@class,'Select-placeholder')]"));
+            sleepMillis(200);
+            RobotHelper robotHelper = new RobotHelper();
+            try {
+                robotHelper.typeString(operationName.toString());
+            } catch (Exception e) {
+                logException(e);
+            }
+            sleepMillis(1000);
+            logScreenshot();
             robotHelper.pressEnter();
-        } catch (Exception e) {
-            logException(e);
-        }
+            logScreenshot();
+            if (isDisplayedWithTimeout(By.xpath("//span[text()='" + operationName.toString() + "' and contains(@class, 'Select-value-label')]"), 500)) {
+                break;
+            }
+            robotHelper.pressEsc();
+            robotHelper.pressEsc();
+            robotHelper.pressEsc();
+            trialsCount++;
+        } while (trialsCount < 5);
+        if (trialsCount == 5)
+            Assert.fail("За 5 попыток так и не было выбрано значение в поле 'Операция'");
     }
 
     @Step("Устанавливаем на фильтре 'Дату приказа' = '{orderDate}'")

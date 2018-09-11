@@ -24,13 +24,24 @@ public class RandomDataGenerator {
     public static String getApplicationNumber() {
         RandomDataGenerator rdg = new RandomDataGenerator();
         // TODO: need to know constraints on this field
-        String applicationNumber = "";
+
         int length = rdg.nextInt(10) + 5;
-        for (int i = 0; i < length; i++) {
-            applicationNumber += rdg.getFigure();
-        }
+        String applicationNumber = rdg.getNumbers(length);
         logPassed("Сгенерирован номер '" + applicationNumber + "'");
         return applicationNumber;
+    }
+
+    /** Генерация случайного номера для заявления: строка из чисел, длина length
+     * @author Gerasimenko I.S.
+     * @return
+     */
+    public String getNumbers(int length) {
+        RandomDataGenerator rdg = new RandomDataGenerator();
+        String stringOfNumbers = "";
+        for (int i = 0; i < length; i++) {
+            stringOfNumbers += rdg.getFigure();
+        }
+        return stringOfNumbers;
     }
 
     /** Генерация случайных серии и номера для Исполнительного документа: /!\ ФОРМАТ УТОЧНЯЕТСЯ
@@ -81,30 +92,35 @@ public class RandomDataGenerator {
     /** Случайная последовательность кириллических символов 'Ххх Ххх Ххх' (длина каждого блока от 2 до 20)
      * @return
      */
-    public static String getFIO() {
+    public String getFIO() {
         RandomDataGenerator rdg = new RandomDataGenerator();
         String fio = "";
         int lastnameLength = 2 + rdg.nextInt(19);
         int firstLength = 2 + rdg.nextInt(19);
         int middleLength = 2 + rdg.nextInt(19);
 
-        fio += rdg.getCyrillicUpperCaseChar();
-        for (int i = 1; i < lastnameLength; i++) {
-            fio += rdg.getCyrillicLowerCaseChar();
-        }
-
-        fio += " " + rdg.getCyrillicUpperCaseChar();
-        for (int i = 1; i < firstLength; i++) {
-            fio += rdg.getCyrillicLowerCaseChar();
-        }
-
-        fio += " " + rdg.getCyrillicUpperCaseChar();
-        for (int i = 1; i < middleLength; i++) {
-            fio += rdg.getCyrillicLowerCaseChar();
-        }
+        fio += rdg.getCyrillicWordWithLeadingUpperCase(lastnameLength);
+        fio += " " + rdg.getCyrillicWordWithLeadingUpperCase(firstLength);
+        fio += " " + rdg.getCyrillicWordWithLeadingUpperCase(middleLength);
 
         return fio;
     }
+
+
+    /** Случайная последовательность кириллических символов вида 'Хххххххххх'
+     * @param length - длина последовательности
+     * @return
+     */
+    public String getCyrillicWordWithLeadingUpperCase(int length) {
+        RandomDataGenerator rdg = new RandomDataGenerator();
+        String wordWithLeadingUpperCaseLetter = String.valueOf(rdg.getCyrillicUpperCaseChar());
+        for (int i = 1; i < length; i++) {
+            wordWithLeadingUpperCaseLetter += rdg.getCyrillicLowerCaseChar();
+        }
+        return wordWithLeadingUpperCaseLetter;
+    }
+
+
 
     public char getCyrillicUpperCaseChar() {
         RandomDataGenerator rdg = new RandomDataGenerator();
@@ -326,5 +342,44 @@ public class RandomDataGenerator {
             listToSort.remove(0);
             listToSort.add(copyOfListToSort.get(numbers.get(i)));
         }
+    }
+
+    public List<Integer> getUniqueIndexes(int numberOfIndexesToReturn, int maxIndex) {
+        List<Integer> fullList = new ArrayList<>();
+        for (int i = 0; i <= maxIndex; i++)
+            fullList.add(i);
+        sortList(fullList);
+        return fullList.subList(0, numberOfIndexesToReturn);
+    }
+
+
+
+    /*****************************************************************************************************************
+     * DOCS NUMBERS
+     ****************************************************************************************************************/
+
+    /** Format: 00 XX 000000 / 00 00 000000 / 0000 000000
+     * @return
+     */
+    public String getDriverLicenseNumberRUS() {
+        int licenseType = nextInt(3);
+        String number = null;
+        switch (licenseType) {
+            case 0:
+                // 1999 - 2011
+                number = getNumbers(2) + " " + getCyrillic(2) + " " + getNumbers(6);
+                break;
+            case 1:
+                // 2011 - 2014
+                number = getNumbers(2) + " " + getNumbers(2) + " " + getNumbers(6);
+                break;
+            case 2:
+                // after 2014
+                number = getNumbers(4) + " " + getNumbers(6);
+                break;
+                default:
+                    throw new IllegalArgumentException("licenseType = " + licenseType + ": not expected value");
+        }
+        return number;
     }
 }

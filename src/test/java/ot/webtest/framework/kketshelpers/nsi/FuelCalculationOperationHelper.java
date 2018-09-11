@@ -7,12 +7,11 @@ import org.testng.Assert;
 import ot.webtest.dataobject.Special;
 import ot.webtest.framework.HelperBase;
 import ot.webtest.framework.helpers.RobotHelper;
+import ot.webtest.framework.kketshelpers.LoaderHelper;
 import ot.webtest.framework.kketshelpers.nsi.dataobject.FuelCalculationOperation;
 import ot.webtest.framework.kketshelpers.nsi.dataobject.FuelConsumptionMetrics;
 
-import static ot.webtest.framework.helpers.AllureHelper.logException;
-import static ot.webtest.framework.helpers.AllureHelper.logScreenshot;
-import static ot.webtest.framework.helpers.AllureHelper.logSkipped;
+import static ot.webtest.framework.helpers.AllureHelper.*;
 import static ot.webtest.framework.helpers.TimerHelper.sleepMillis;
 
 public class FuelCalculationOperationHelper extends HelperBase {
@@ -44,6 +43,9 @@ public class FuelCalculationOperationHelper extends HelperBase {
 
         logScreenshot("Скриншот перед сохранением формы.");
         clickSave();
+
+        LoaderHelper loader = new LoaderHelper();
+        loader.waitLoaderDisappear();
     }
 
     @Step("Клик на кнопке 'Сохранить'")
@@ -59,17 +61,38 @@ public class FuelCalculationOperationHelper extends HelperBase {
     public void filterByOperationName(String operationName) {
         By openCloseFilterButtonLocator = By.xpath("//button[@id='show-options-filter']");
         click("Раскрываем фильтры", openCloseFilterButtonLocator);
+        logScreenshot();
         sleepMillis(200);
-        click("Клик по полю 'Операция' для активации ввода (установки курсора)", By.xpath("//div[label[text()='Операция']]//div[contains(@class,'Select-placeholder')]"));
-        sleepMillis(200);
-        RobotHelper robotHelper = new RobotHelper();
-        try {
-            robotHelper.typeString(operationName);
-            robotHelper.pressEnter();
-        } catch (Exception e) {
-            logException(e);
-        }
+        int trialsCount = 0;
+        do {
+            logDelimeter();
+            logPassed("Попытка #" + trialsCount);
+            logScreenshot();
+            click("Клик по полю 'Операция' для активации ввода (установки курсора)", By.xpath("//div[label[text()='Операция']]//div[contains(@class,'Select-placeholder')]"));
+            logScreenshot();
+            sleepMillis(200);
+            logScreenshot();
+            RobotHelper robotHelper = new RobotHelper();
+            try {
+                robotHelper.typeString(operationName);
+                logScreenshot();
+                robotHelper.pressEnter();
+            } catch (Exception e) {
+                logException(e);
+            }
+            logScreenshot();
+            if (isDisplayedWithTimeout(By.xpath("//span[text()='" + operationName + "' and contains(@class, 'Select-value-label')]"), 500)) {
+                break;
+            }
+            trialsCount++;
+        } while (trialsCount < 5);
+        if (trialsCount == 5)
+            Assert.fail("За 5 попыток так и не было выбрано значение в поле 'Операция'");
+
+        logDelimeter();
         click("Клик по кнопке 'Применить'", By.xpath("//button[@id='apply-filter']"));
+        sleepMillis(200);
+        logScreenshot("Скриншот по применению фильтра");
         click("Закрываем фильтры", openCloseFilterButtonLocator);
     }
 

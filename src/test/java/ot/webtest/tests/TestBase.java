@@ -60,7 +60,7 @@ public class TestBase {
 
         JsonDataReader connectionSettingsReader = new JsonDataReader();
         String machineName = TestRailHelper.getMachineName();
-        if (machineName.equals("qtp3")) {
+        if (machineName.equals("qtp3") || machineName.equals("WIN-AT9EB98UPOU")) {
             System.out.println("Working from machine <" + machineName + "> using proxy");
             connectionSettingsReader.getJsonObjectFromFile(System.getProperty("user.dir") + "\\test-data\\connection-settings.json");
         } else {
@@ -109,7 +109,8 @@ public class TestBase {
                 .withLogin(testDataReader.getValueByKey("login"))
                 .withPassword(testDataReader.getValueByKey("password"))
                 .withPopupLogin(testDataReader.getValueByKey("popup-login"))
-                .withPopupPassword(testDataReader.getValueByKey("popup-password"));
+                .withPopupPassword(testDataReader.getValueByKey("popup-password"))
+                .withSurnameNM(testDataReader.getValueByKey("userSurnameNM"));
 
         appUnderTest = new AppUnderTest()
                 .withUrl(testDataReader.getValueByKey("ets-url"));
@@ -126,8 +127,9 @@ public class TestBase {
         bw.terminate();
         // this part is commented because we does not have sprints & build number is unpredictable and does not mean anything
         //TestRailHelper.setParentMilestones(testrailProjectId);
-        //TestRailHelper.completeMilestonesDueDateFourWeeksAgo(testrailProjectId);
-        //TestRailHelper.completeMilestonesStartedFourWeeksAgo(testrailProjectId);
+        TestRailHelper.completeMilestonesDueDateFourWeeksAgo(testrailProjectId);
+        TestRailHelper.completeMilestonesStartedFourWeeksAgo(testrailProjectId);
+        //TestRailHelper.closeTestRunsOlderThanFourWeeks(testrailProjectId);
         bw.killChromeDriver();
     }
 
@@ -136,21 +138,20 @@ public class TestBase {
     @TestRailCaseId(testCaseId = 1969)
     public void testsInfo() {
         logBoldDelimeter();
-        logPassed(" >> ТЕСТ: Создание децентрализованного задания (Рабочий стол) - DashboardTest.dashboardCreateDecentralizedTaskTest()");
-        logFailed("ОТКЛЮЧЕН случайный выбор Маршрута. Т.к. есть маршрут с дублями пробелов '1-2   ПМ   ПРАВИЛЬНЫЙ , Проезжая часть', а он валит Селенид.");
-
-        logBoldDelimeter();
-        logPassed(" >> ТЕСТ: Создание децентрализованного задания (Журнал заданий) - TaskJournalTest.taskJournalCreateDecentralizedTaskTest()");
-        logFailed("ОТКЛЮЧЕН случайный выбор Маршрута. Т.к. есть маршрут с дублями пробелов '1-2   ПМ   ПРАВИЛЬНЫЙ , Проезжая часть', а он валит Селенид.");
+        logPassed(" >> ТЕСТ: 07. Создание карточки сотрудника (водитель/машинист) - NsiTest.createDriverOrMachinistEmployeeCardTest()");
+        logPassed(" >> ТЕСТ: 08. Создание карточки сотрудника (НЕ водитель/машинист) - NsiTest.createNotDriverOrMachinistEmployeeCardTest()");
+        logFailed("BUG: Поле 'Табельный номер' не сохраняет лидирующие нули!");
 
         Assert.fail("В тестах присутствуют отклонения от желаемого варианта проверок.");
     }
 
     @BeforeMethod
+    @BeforeClass
     public void reinitAppOnFailure() {
         if (testStatus == TestRailStatus.FAILED) {
             logBroken("/!\\ Перезапуск браузера после падения теста /!\\");
             bw.reinit(user, appUnderTest);
+            testStatus = TestRailStatus.PASSED;
         } else {
             logPassed("Предыдущий тест не упал. Перезапуск приложения не нужен");
         }

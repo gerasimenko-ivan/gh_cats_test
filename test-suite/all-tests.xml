@@ -7,6 +7,12 @@
                 <methods>
                     <include name="dashboardCreateDecentralizedTaskTest"/>
                     <include name="dashboardCreateWorkOrderTaskTest"/>
+                    <include name="dashboardCreateWaybillTest"/>
+                </methods>
+            </class>
+            <class name="ot.webtest.tests.WaybillTest">
+                <methods>
+                    <include name="createWaybillTest"/>
                 </methods>
             </class>
             <class name="ot.webtest.tests.TaskJournalTest">
@@ -17,6 +23,8 @@
             </class>
             <class name="ot.webtest.tests.NsiTest">
                 <methods>
+                    <include name="createDriverOrMachinistEmployeeCardTest"/>
+                    <include name="createNotDriverOrMachinistEmployeeCardTest"/>
                     <include name="createCardFuelCalculationOperationTest"/>
                     <include name="createCardFuelConsumptionNormTest"/>
                 </methods>

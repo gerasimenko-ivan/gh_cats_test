@@ -118,7 +118,7 @@ public class RobotHelper {
             e.printStackTrace();
         }
         r.keyPress(keyEvent);
-        r.keyRelease(KeyEvent.VK_F1);
+        r.keyRelease(keyEvent);
     }
     @Step("Нажимаем на клавишу <F1>")
     public void pressF1() {
@@ -131,6 +131,10 @@ public class RobotHelper {
     @Step("Нажимаем на клавишу <ENTER>")
     public void pressEnter() {
         pressButton(KeyEvent.VK_ENTER);
+    }
+    @Step("Нажимаем на клавишу <ESC>")
+    public void pressEsc() {
+        pressButton(KeyEvent.VK_ESCAPE);
     }
     @Step("Нажимаем на клавишу <Tab>")
     public void pressTab() {

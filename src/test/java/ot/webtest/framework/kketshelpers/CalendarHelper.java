@@ -3,18 +3,21 @@ package ot.webtest.framework.kketshelpers;
 import com.codeborne.selenide.SelenideElement;
 import io.qameta.allure.Step;
 import org.openqa.selenium.By;
+import ot.webtest.dataobject.Special;
+import ot.webtest.dataobject.SpecialDateTime;
 import ot.webtest.framework.HelperBase;
 
 import java.time.LocalDate;
 import java.time.Month;
 
+import static ot.webtest.framework.helpers.AllureHelper.logSkipped;
 import static ot.webtest.framework.helpers.TimerHelper.sleepMillis;
 
 public class CalendarHelper extends HelperBase {
 
     @Step("Устанавливаем дату '{date}' в раскрытом календаре.")
     public void setDate(LocalDate date) {
-        SelenideElement goToMonthSelectionElement = findElementHavingInvisibleDuplicates(By.xpath("//div[@class='rw-calendar-header']/button[contains(@id, 'calendar_label')]"));
+        SelenideElement goToMonthSelectionElement = findElementHavingInvisibleDuplicates(By.xpath("//div[@class='rw-calendar-header']/button[contains(@id, 'calendar_label')]"), 5000);
         click("Клик по выбранным месяц-год для перехода к выбору месяца", goToMonthSelectionElement);
         sleepMillis(300);
         SelenideElement goToYearSelectionElement = findElementHavingInvisibleDuplicates(By.xpath("//div[@class='rw-calendar-header']/button[contains(@id, 'calendar_label')]"));
@@ -92,5 +95,34 @@ public class CalendarHelper extends HelperBase {
                 break;
         }
         return monthName;
+    }
+
+    @Step("В поле '{dateFieldName}' устанавливаем дату '{date}'")
+    public void setDateOrLogNoDataToSet(LocalDate date, String dateFieldName, By calendarOpenerLocator) {
+        CalendarHelper calendarHelper = new CalendarHelper();
+        if (date != null) {
+            click("Нажимаем на 'Кнопка раскрытия календаря <" + dateFieldName + ">'", calendarOpenerLocator);
+            sleepMillis(300);
+            calendarHelper.setDate(date);
+        } else {
+            logSkipped("Нет данных для ввода в поле '" + dateFieldName + "'");
+        }
+    }
+
+    @Step("В поле '{dateFieldName}' устанавливаем дату-время '{dateTime}'")
+    public void setDateOrLogNoDataToSet (SpecialDateTime dateTime, String dateFieldName, String xpathToTagWithDateTimeButtons) {
+        CalendarHelper calendarHelper1 = new CalendarHelper();
+        if (dateTime != null && dateTime.date != null) {
+            click("Раскрываем календарь установки '" + dateFieldName + "'", By.xpath(xpathToTagWithDateTimeButtons + "//button[@aria-label='Select date']"));
+            sleepMillis(300);
+            calendarHelper1.setDate(dateTime.date);
+            dropDownSelect(
+                    dateFieldName,
+                    new Special<>(dateTime.getTime24()),
+                    By.xpath(xpathToTagWithDateTimeButtons + "//button[@aria-label='Select time']"),
+                    By.xpath(xpathToTagWithDateTimeButtons+ "//ul/li"));
+        } else {
+            logSkipped("Нет данных для ввода в поле '" + dateFieldName +  "'");
+        }
     }
 }
